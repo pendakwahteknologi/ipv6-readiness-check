@@ -1,0 +1,9 @@
+# Output of the server audit (scenario B, --json)
+ipv6-audit.json
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local editor/agent configuration
+opencode.jsonc
