@@ -5,8 +5,9 @@ This repository lets an AI coding agent do two things:
 - **Scenario A:** check any domain's IPv6 readiness from the outside.
 - **Scenario B:** audit the server the agent is running on for IPv6 readiness.
 
-The method is MGv6C-1.0 (Malaysian Government IPv6 Compliance, version 1.0), the
-standard used by the National IPv6 Readiness Monitor at https://ipv6.my6.my.
+The method is the My6 IPv6 Readiness Criteria, version 1.0, published by My6
+Initiative Berhad and used by the National IPv6 Readiness Monitor at
+https://ipv6.my6.my.
 IPv6 (Internet Protocol version 6) is the newer version of the addressing system
 that lets devices find each other on the internet. This repository measures
 whether a service still works when reached over IPv6.
@@ -120,7 +121,7 @@ tests. Everything else the audit does is a local read.
    python3 scripts/ipv6check.py '<hostname>'
    ```
 
-4. Write the compliance report using the scenario B layout in
+4. Write the readiness report using the scenario B layout in
    `docs/REPORT-TEMPLATE.md`. Combine the server findings with the domain results.
    Lead with the verdict, then what to fix in order of severity, then the evidence.
 

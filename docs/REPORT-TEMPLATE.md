@@ -67,8 +67,7 @@ prints them. Mark the information items as INFO.>
 # IPv6 readiness report: my6.my
 
 ## Verdict
-my6.my scores 95 out of 100: Compliant: fully ready. The official monitor score is
-also 95.
+my6.my scores 95 out of 100: Fully ready. The official monitor score is also 95.
 
 ## What to fix
 1. Reverse DNS (PTR): a PTR record maps an address back to a name. It supports

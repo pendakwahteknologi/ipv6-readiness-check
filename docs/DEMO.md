@@ -1,13 +1,13 @@
 # Live demonstration script
 
 This is a run sheet for demonstrating the repository to an audience, for example
-Malaysian government officers. The goal is to show that one sentence to an AI coding
+public sector officers. The goal is to show that one sentence to an AI coding
 agent is enough to check a domain (a name such as jpa.gov.my) or audit a server.
 
-The method is MGv6C-1.0 (Malaysian Government IPv6 Compliance, version 1.0), the
-standard used by the National IPv6 Readiness Monitor at https://ipv6.my6.my. IPv6
-(Internet Protocol version 6) is the newer version of the addressing system that
-lets devices find each other on the internet. It succeeds IPv4 (version 4), the
+The method is the My6 IPv6 Readiness Criteria, version 1.0, published by My6
+Initiative Berhad and used by the National IPv6 Readiness Monitor at
+https://ipv6.my6.my. IPv6 (Internet Protocol version 6) is the newer version of the
+addressing system that lets devices find each other on the internet. It succeeds IPv4 (version 4), the
 older system whose addresses are running out. The checks measure whether a service
 still works when reached over IPv6.
 
@@ -26,8 +26,8 @@ Do these once, on the machine you will present from.
    python3 scripts/ipv6check.py my6.my --official
    ```
 
-   You should see a score near 95 and the level "Compliant: fully ready", with the
-   official score beside it. If you instead see PROVISIONAL, the room's network has
+   You should see a score near 95 and the level "Fully ready", with the official
+   score beside it. If you instead see PROVISIONAL, the room's network has
    no IPv6. Read the section below on that case before you present.
 4. Optionally run the server audit once so you know what it will show:
 
@@ -61,9 +61,9 @@ The agent runs `scripts/ipv6check.py` and then reports, in this order:
 
 Good domains to show contrast:
 
-- `my6.my` is fully ready, scoring about 95. It shows what "Compliant" looks like.
-- `jpa.gov.my` is partially compliant, scoring about 63. It shows a realistic "What
-  to fix" list, because its web server does not answer over IPv6.
+- `my6.my` is fully ready, scoring about 95. It shows what "Fully ready" looks like.
+- `jpa.gov.my` is partly ready, scoring about 63. It shows a realistic "What to fix"
+  list, because its web server does not answer over IPv6.
 - `pos.com.my` is fully ready and shows a clean pass.
 
 Scores can move by a point or two with network conditions. That is normal. If you

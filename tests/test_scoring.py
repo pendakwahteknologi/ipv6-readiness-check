@@ -1,4 +1,4 @@
-"""Unit tests for the MGv6C scoring and the not-measured denominator rule.
+"""Unit tests for the My6 IPv6 Readiness Criteria scoring and the not-measured denominator rule.
 
 These tests are offline: they import the pure scoring functions from
 scripts/ipv6check.py and never touch the network.
@@ -36,7 +36,7 @@ class TestRounding(unittest.TestCase):
 
 
 class TestScoring(unittest.TestCase):
-    def test_worked_example_from_standard(self):
+    def test_worked_example_from_criteria(self):
         # 4 of 5 DNS checks, everything else perfect -> 95.
         passed = counts(8, 4, 6, 3)
         measured = counts(8, 5, 6, 3)
@@ -100,12 +100,32 @@ class TestNotMeasuredDenominator(unittest.TestCase):
 
 class TestLevels(unittest.TestCase):
     def test_boundaries(self):
-        self.assertEqual(ipv6check.level_for(100), "Compliant: fully ready")
-        self.assertEqual(ipv6check.level_for(90), "Compliant: fully ready")
-        self.assertEqual(ipv6check.level_for(89), "Partially compliant")
-        self.assertEqual(ipv6check.level_for(60), "Partially compliant")
-        self.assertEqual(ipv6check.level_for(59), "Non-compliant: not ready")
-        self.assertEqual(ipv6check.level_for(0), "Non-compliant: not ready")
+        self.assertEqual(ipv6check.level_for(100), "Fully ready")
+        self.assertEqual(ipv6check.level_for(90), "Fully ready")
+        self.assertEqual(ipv6check.level_for(89), "Partly ready")
+        self.assertEqual(ipv6check.level_for(60), "Partly ready")
+        self.assertEqual(ipv6check.level_for(59), "Not ready")
+        self.assertEqual(ipv6check.level_for(0), "Not ready")
+
+
+class TestOfficialLevel(unittest.TestCase):
+    def test_prefers_readiness_level(self):
+        data = {"readiness": {"criteria": "My6 IPv6 Readiness Criteria",
+                              "version": "1.0", "level": "Partly ready"},
+                ipv6check.LEGACY_LEVEL_FIELD: "Compliant"}
+        self.assertEqual(ipv6check.official_level(data), "Partly ready")
+
+    def test_legacy_field_is_mapped(self):
+        # The old field values map to the current level names.
+        field = ipv6check.LEGACY_LEVEL_FIELD
+        self.assertEqual(ipv6check.official_level({field: "Compliant"}), "Fully ready")
+        self.assertEqual(ipv6check.official_level({field: "Partially Compliant"}), "Partly ready")
+        self.assertEqual(ipv6check.official_level({field: "Non-Compliant"}), "Not ready")
+
+    def test_missing_fields_return_none(self):
+        self.assertIsNone(ipv6check.official_level({}))
+        self.assertIsNone(ipv6check.official_level({"readiness": {}}))
+        self.assertIsNone(ipv6check.official_level({ipv6check.LEGACY_LEVEL_FIELD: "Unknown"}))
 
 
 class TestCatalogue(unittest.TestCase):

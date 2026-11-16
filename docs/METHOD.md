@@ -1,9 +1,13 @@
-# The MGv6C-1.0 method, as implemented in this repository
+# The My6 IPv6 Readiness Criteria, as implemented in this repository
 
 This document describes the 22 scored checks, how this repository runs each one,
-the scoring formula, the compliance levels and the limits of an outside test. It
-follows MGv6C-1.0 (Malaysian Government IPv6 Compliance, version 1.0), the method
-used by the National IPv6 Readiness Monitor at https://ipv6.my6.my.
+the scoring formula, the readiness levels and the limits of an outside test. It
+follows the My6 IPv6 Readiness Criteria, version 1.0, published by My6 Initiative
+Berhad and used by the National IPv6 Readiness Monitor at https://ipv6.my6.my.
+
+These criteria are published by My6 Initiative Berhad. They are not issued or
+endorsed by the Malaysian Communications and Multimedia Commission (MCMC) or the
+Government of Malaysia. Each check is based on a published internet standard.
 
 The checks are grouped into four parts. Each part has a fixed weight in the final
 score. A further four items are reported as information and do not affect the score.
@@ -103,9 +107,6 @@ These are reported for transparency and troubleshooting. They do not change the 
 | Signing algorithm | The DNSSEC algorithm of the key-signing key. | DoH DNSKEY query, read the algorithm of the key-signing key, the DNSKEY record with flags 257. | RFC 4033, RFC 4034, RFC 4035 |
 | DKIM selector | A published DKIM key at a common selector. | DoH TXT queries at common selectors such as default and google. | RFC 6376 |
 
-The Malaysian requirement that underpins the whole method is MCMC MTSFB TC G046:2024,
-the Malaysian Communications and Multimedia Commission standard for IPv6 security.
-
 ## The scoring formula
 
 Each part contributes its weight multiplied by the fraction of its checks that passed.
@@ -134,15 +135,15 @@ checks and all 3 IPv4 checks.
 | Existing IPv4 | 3 / 3 | 3/3 x 15 | 15 |
 | **Total** | | | **95** |
 
-The score is 95, which is the level "Compliant: fully ready".
+The score is 95, which is the level "Fully ready".
 
-## Compliance levels
+## Readiness levels
 
 | Score | Level |
 | --- | --- |
-| 90 to 100 | Compliant: fully ready |
-| 60 to 89 | Partially compliant |
-| 0 to 59 | Non-compliant: not ready |
+| 90 to 100 | Fully ready |
+| 60 to 89 | Partly ready |
+| 0 to 59 | Not ready |
 
 ## Not measured is not failed
 
@@ -198,7 +199,7 @@ That has limits you should state when you report a result:
 
 ## Standards reference
 
-The standards behind the checks, as listed in section 6 of the MGv6C standard page:
+The published internet standards behind the checks:
 
 - RFC 8200: the IPv6 protocol specification.
 - RFC 6724: default address selection behaviour.
@@ -215,4 +216,3 @@ The standards behind the checks, as listed in section 6 of the MGv6C standard pa
 - RFC 7208: SPF.
 - RFC 6376: DKIM.
 - RFC 9989: DMARC.
-- MCMC MTSFB TC G046:2024: Malaysian IPv6 security requirements.

@@ -6,9 +6,13 @@ find each other on the internet. It succeeds IPv4 (version 4), the older system
 whose addresses are running out. This repository measures whether a service still
 works when it is reached over IPv6.
 
-The method is MGv6C-1.0 (Malaysian Government IPv6 Compliance, version 1.0), the
-standard used by the National IPv6 Readiness Monitor at https://ipv6.my6.my. The
-checks and the scoring here match that monitor.
+The method is the My6 IPv6 Readiness Criteria, version 1.0, published by My6
+Initiative Berhad and used by the National IPv6 Readiness Monitor at
+https://ipv6.my6.my. The checks and the scoring here match that monitor.
+
+These criteria are published by My6 Initiative Berhad. They are not issued or
+endorsed by the Malaysian Communications and Multimedia Commission (MCMC) or the
+Government of Malaysia. Each check is based on a published internet standard.
 
 It is built to be driven by an AI coding agent. Point Claude Code, Codex CLI, Gemini
 CLI or any chat assistant with a terminal at this repository and ask, in one
@@ -98,8 +102,8 @@ The score is a weighted percentage:
 | Email | 6 | 25 |
 | Existing IPv4 service | 3 | 15 |
 
-The levels are: 90 to 100 "Compliant: fully ready", 60 to 89 "Partially compliant"
-and 0 to 59 "Non-compliant: not ready". Four more items are reported as information
+The levels are: 90 to 100 "Fully ready", 60 to 89 "Partly ready" and 0 to 59
+"Not ready". Four more items are reported as information
 and do not affect the score: the DS record (the anchor that links a domain's DNSSEC
 keys to its parent zone), RRSIG validity (whether the DNSSEC signatures are still in
 date), the DNSSEC algorithm (the cryptographic method used to sign) and the DKIM
@@ -120,15 +124,14 @@ IPV6CHECK_FORCE_NO_V6=1 python3 scripts/ipv6check.py example.gov.my
 The same principle applies to SMTP over IPv6: a timeout is treated as not measured,
 while a refused connection is a real failure.
 
-## Relationship to ipv6.my6.my and MGv6C-1.0
+## Relationship to ipv6.my6.my
 
-This repository is an independent, offline implementation of the MGv6C-1.0 method
-that the National IPv6 Readiness Monitor publishes at https://ipv6.my6.my. It runs
-the same 22 checks with the same weights and the same not-measured rule, from the
-computer you run it on. With `--official` it fetches the monitor's own score for a
-monitored domain and shows it beside the local score, so you can compare the two.
-It is not affiliated with or endorsed by the monitor; it simply implements the
-published method.
+This repository is an offline implementation of the My6 IPv6 Readiness Criteria,
+version 1.0, used by the National IPv6 Readiness Monitor at https://ipv6.my6.my. It
+runs the same 22 checks with the same weights and the same not-measured rule, from
+the computer you run it on. With `--official` it fetches the monitor's own score for
+a monitored domain and shows it beside the local score, so you can compare the two.
+It simply implements the published criteria.
 
 ## For AI agents
 

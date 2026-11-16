@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check a domain's IPv6 readiness using the MGv6C-1.0 method.
+"""Check a domain's IPv6 readiness using the My6 IPv6 Readiness Criteria, version 1.0.
 
 This is scenario A of the ipv6-readiness-check repository. It runs the same 22
 scored checks as the National IPv6 Readiness Monitor at https://ipv6.my6.my,
@@ -71,7 +71,7 @@ MAX_NS_HOSTS = 4             # cap the number of name servers tried
 MAX_NS_ADDRS = 2             # cap the addresses tried per name server
 TOTAL_TIME_LIMIT = 60        # hard wall-clock budget for the whole run, seconds
 TIME_LIMIT_REASON = "time limit reached"
-USER_AGENT = "ipv6-readiness-check/1.0 (MGv6C-1.0; +https://ipv6.my6.my)"
+USER_AGENT = "ipv6-readiness-check/1.0 (My6 IPv6 Readiness Criteria 1.0; +https://ipv6.my6.my)"
 
 DOH_ENDPOINTS = [
     ("https://dns.google/resolve", {}),
@@ -131,7 +131,7 @@ def round_half_up(value):
 
 
 def compute_score(passed, measured):
-    """Return the MGv6C score from per-category passed and measured counts.
+    """Return the readiness score from per-category passed and measured counts.
 
     passed and measured are dicts keyed by category. "measured" is the number
     of scored checks that produced a PASS or FAIL; checks that were NOT
@@ -153,12 +153,12 @@ def compute_score(passed, measured):
 
 
 def level_for(score):
-    """Return the plain-language compliance level for a score."""
+    """Return the plain-language readiness level for a score."""
     if score >= 90:
-        return "Compliant: fully ready"
+        return "Fully ready"
     if score >= 60:
-        return "Partially compliant"
-    return "Non-compliant: not ready"
+        return "Partly ready"
+    return "Not ready"
 
 
 def dnssec_validated(response):
@@ -972,6 +972,31 @@ def test_ipv6_capability(resolver, budget):
 # Official score
 # ---------------------------------------------------------------------------
 
+# Backward compatibility: the API keeps an old level field under this name. It
+# is read only as a fallback when the new readiness object is absent, and this
+# is the only place the old field name appears in the repository.
+LEGACY_LEVEL_FIELD = "mgv6c"
+
+
+def official_level(data):
+    """Return the readiness level from an official API response.
+
+    The new readiness object carries the level directly, so readiness.level is
+    preferred. When it is absent the script falls back to the API's old field
+    and maps its value to the current level names.
+    """
+    readiness = data.get("readiness") or {}
+    level = readiness.get("level")
+    if level:
+        return level
+    legacy_levels = {
+        "Compliant": "Fully ready",
+        "Partially Compliant": "Partly ready",
+        "Non-Compliant": "Not ready",
+    }
+    return legacy_levels.get(data.get(LEGACY_LEVEL_FIELD))
+
+
 def fetch_official(domain, budget=None):
     """Fetch the official monitor score. Return a dict or a polite error dict."""
     url = OFFICIAL_API.format(domain=urllib.parse.quote(domain))
@@ -984,8 +1009,8 @@ def fetch_official(domain, budget=None):
         return {
             "available": True,
             "score": data.get("score"),
+            "level": official_level(data),
             "status_label": data.get("status_label"),
-            "mgv6c": data.get("mgv6c"),
             "checked_at": data.get("checked_at"),
         }
     except urllib.error.HTTPError as exc:
@@ -1572,7 +1597,7 @@ def render_human(domain, checks, summary, official, has_v6, started_at):
     lines = []
     add = lines.append
     add("IPv6 readiness check: {}".format(domain))
-    add("Method: MGv6C-1.0, as implemented by the National IPv6 Readiness Monitor (ipv6.my6.my)")
+    add("Method: My6 IPv6 Readiness Criteria 1.0 (My6 Initiative Berhad), as used by the National IPv6 Readiness Monitor (ipv6.my6.my)")
     add("Checked at: {} (UTC)".format(started_at))
     add("Local outbound IPv6: {}".format("working" if has_v6 else "not available"))
     add("")
@@ -1584,7 +1609,7 @@ def render_human(domain, checks, summary, official, has_v6, started_at):
     if official is not None:
         if official.get("available"):
             add("Official score (ipv6.my6.my): {} ({})".format(
-                official.get("score"), official.get("mgv6c") or official.get("status_label")))
+                official.get("score"), official.get("level") or official.get("status_label")))
         else:
             add("Official score: {}".format(official.get("reason")))
     if summary["provisional"]:
@@ -1633,7 +1658,7 @@ def render_human(domain, checks, summary, official, has_v6, started_at):
 def render_json(domain, checks, summary, official, has_v6, started_at):
     payload = {
         "domain": domain,
-        "method": "MGv6C-1.0",
+        "method": "My6 IPv6 Readiness Criteria 1.0",
         "checked_at": started_at,
         "local_ipv6": has_v6,
         "provisional": summary["provisional"],
@@ -1705,7 +1730,7 @@ def main(argv=None):
         pass
 
     parser = argparse.ArgumentParser(
-        description="Check a domain's IPv6 readiness using the MGv6C-1.0 method.")
+        description="Check a domain's IPv6 readiness using the My6 IPv6 Readiness Criteria, version 1.0.")
     parser.add_argument("domain", help="the domain to check, e.g. example.gov.my")
     parser.add_argument("--json", action="store_true", help="print one JSON object")
     parser.add_argument("--official", action="store_true",
