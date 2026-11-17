@@ -53,7 +53,7 @@ score. A further four items are reported as information and do not affect the sc
 | A2 Globally routable IPv6 | The address is public, not reserved or private. | Classify each AAAA address, excluding loopback, link-local, ULA and documentation ranges. | RFC 8200, RFC 6724 |
 | A3 HTTP over IPv6 | The web server answers on port 80 over IPv6. | A HEAD request to port 80 over an IPv6 socket, following up to three redirects over IPv6 only. Any HTTP response counts. | RFC 8200, RFC 8305 |
 | A4 HTTPS over IPv6 | The web server answers on port 443 over IPv6. | A HEAD request to port 443 over an IPv6 socket with TLS and SNI, following up to three redirects over IPv6 only. | RFC 8200, RFC 9325 |
-| A5 IPv6-only reachability | The site loads with no IPv4 fallback. | A separate no-follow HEAD probe over IPv6 only, accepting status 200, 301, 302 or 303. | RFC 8200, RFC 8305 |
+| A5 IPv6-only reachability | The site loads with no IPv4 fallback. | A separate no-follow HEAD probe over IPv6 only, accepting status 200 or any redirect (301, 302, 303, 307 or 308). If the server refuses HEAD (405 or 501), the probe is repeated once as GET. | RFC 8200, RFC 8305 |
 | A6 TLS certificate valid (IPv6) | The certificate over IPv6 is valid and matches the name. | A TLS handshake over IPv6 with full certificate validation and SNI. The verdict comes from the handshake alone, not the HTTP status. | RFC 9325, RFC 9846 |
 | A7 Dual-stack | Both A and AAAA records exist. | DoH A and AAAA queries, both must return an address. | RFC 6724, RFC 8305 |
 | A8 HTTP/3 (QUIC) | The server advertises HTTP/3. | Read the Alt-Svc header over IPv6, trying every AAAA address until one advertises h3. | RFC 9114 |

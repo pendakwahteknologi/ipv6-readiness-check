@@ -81,7 +81,9 @@ DOH_ENDPOINTS = [
 OFFICIAL_API = "https://ipv6.my6.my/api/v1/domains/{domain}"
 
 REDIRECT_CODES = (301, 302, 303, 307, 308)
-IPV6_ONLY_OK_CODES = (200, 301, 302, 303)
+IPV6_ONLY_OK_CODES = (200, 301, 302, 303, 307, 308)
+# A server that refuses HEAD with one of these is asked again with GET.
+HEAD_REFUSED_CODES = (405, 501)
 
 # DNS record type numbers.
 RT_A = 1
@@ -598,8 +600,9 @@ def tcp_connect(ip, port, family, timeout=CONNECT_TIMEOUT):
     return None, outcome
 
 
-def http_head(domain, ip, port, family, verify_tls, budget=None, path="/"):
-    """Send a HEAD request to ip:port with SNI=domain. Return a result dict.
+def http_head(domain, ip, port, family, verify_tls, budget=None, path="/",
+              method="HEAD"):
+    """Send a HEAD request (or GET, reading the headers only) to ip:port with SNI=domain. Return a result dict.
 
     For port 443 the connection is wrapped in TLS. verify_tls controls whether
     the certificate is validated; SNI is always sent. No redirects are followed
@@ -645,12 +648,12 @@ def http_head(domain, ip, port, family, verify_tls, budget=None, path="/"):
             except Exception:
                 pass
         request = (
-            "HEAD {path} HTTP/1.1\r\n"
+            "{method} {path} HTTP/1.1\r\n"
             "Host: {host}\r\n"
             "User-Agent: {ua}\r\n"
             "Accept: */*\r\n"
             "Connection: close\r\n\r\n"
-        ).format(path=path, host=domain, ua=USER_AGENT)
+        ).format(method=method, path=path, host=domain, ua=USER_AGENT)
         sock.sendall(request.encode("ascii", "replace"))
         sock.settimeout(timeout)
         data = b""
@@ -684,6 +687,19 @@ def http_head(domain, ip, port, family, verify_tls, budget=None, path="/"):
                 sock.close()
             except Exception:
                 pass
+
+
+def ipv6_only_probe(domain, ip, budget=None):
+    """No-follow HTTPS probe over IPv6 for the IPv6-only check.
+
+    HEAD first. If the server does not allow HEAD (405 or 501) the same request
+    is sent once more as GET, and only the response headers are read.
+    """
+    result = http_head(domain, ip, 443, socket.AF_INET6, False, budget)
+    if result["code"] in HEAD_REFUSED_CODES:
+        result = http_head(domain, ip, 443, socket.AF_INET6, False, budget,
+                           method="GET")
+    return result
 
 
 def http_with_redirects(domain, aaaa, port, resolver, budget, verify_tls=False):
@@ -1109,7 +1125,7 @@ def run_checks(domain, resolver, has_v6, budget=None):
                 http_with_redirects, domain, aaaa, 443, resolver, budget, False)
             # A dedicated no-follow HTTPS probe for the IPv6-only check.
             futures["ipv6_only"] = pool.submit(
-                http_head, domain, primary_v6, 443, socket.AF_INET6, False, budget)
+                ipv6_only_probe, domain, primary_v6, budget)
             # A validated handshake for the TLS check.
             futures["tls_v6"] = pool.submit(
                 http_head, domain, primary_v6, 443, socket.AF_INET6, True, budget)

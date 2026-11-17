@@ -177,9 +177,9 @@ class TestWebPassRules(unittest.TestCase):
         self.assertFalse(ipv6check.http_pass_code(0))
 
     def test_ipv6_only_pass_codes(self):
-        for code in (200, 301, 302, 303):
+        for code in (200, 301, 302, 303, 307, 308):
             self.assertTrue(ipv6check.ipv6_only_pass_code(code))
-        for code in (0, 307, 308, 404, 500):
+        for code in (0, 403, 404, 405, 500):
             self.assertFalse(ipv6check.ipv6_only_pass_code(code))
 
 
