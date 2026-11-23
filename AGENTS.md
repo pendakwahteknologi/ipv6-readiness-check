@@ -81,12 +81,10 @@ Use this when the user names a domain and asks about its IPv6 readiness.
    then the evidence table. Use plain language and define each technical term the
    first time you use it.
 
-4. If the score is marked PROVISIONAL, tell the user that this computer has no
-   working outbound IPv6, so the IPv6 connection checks were not measured. Offer
-   running from a computer with IPv6 as the way to get a full result. You may
-   also offer `--official`, but only as an option the user can choose after you
-   explain that it sends the domain name to ipv6.my6.my. Do not present a
-   provisional score as a final result.
+4. If the score is marked PROVISIONAL, handle it as "Reading the result for the
+   user" below says. Do not present a provisional score as a final result. You
+   may also offer `--official`, but only as an option the user can choose after
+   you explain that it sends the domain name to ipv6.my6.my.
 
 ## Scenario B: audit this server
 
@@ -146,6 +144,39 @@ that moves mail between servers) over IPv6 is treated as not measured, because t
 local network may be filtering it. A refused connection is a real failure, because
 it proves the host was reached and declined. The whole domain check has a 60 second
 budget, and any check left unfinished when it expires is not measured, not failed.
+
+## Reading the result for the user
+
+- **Levels.** 90 to 100 is Fully ready, 60 to 89 Partly ready, 0 to 59 Not ready.
+  A Not ready site can still score 15 to 30 from its IPv4 service and mail
+  records, so always read the score with the failed checks.
+- **A score is only as good as what was measured.** If the output says
+  PROVISIONAL or lists NOT MEASURED checks, say so, and never call those checks
+  failures. See "not measured is not failed" below.
+- **The site's DNS-only survey uses four levels, not the three above**
+  (https://ipv6.my6.my/detailed-register). "Website on IPv6": a live domain whose
+  website (the domain or its www name) has an IPv6 address. "DNS or mail on IPv6
+  only": no IPv6 address for the website, but one for a name server or mail
+  server. "No IPv6": no IPv6 address for the website, name servers or mail
+  servers. "No website or not registered": parked, no website or mail address,
+  DNS not working, or the .my registry says the name does not exist. The survey
+  reads DNS only and never opens the website, so a "Website on IPv6" level does
+  not prove the website works over IPv6; only this script's tested checks (or the
+  in-depth score on the site) show that. Do not mix survey levels with score
+  levels.
+- **Deadlines, as the monitor states them.** Malaysian government agencies:
+  31 December 2027. All Malaysian public-facing services must be able to operate
+  on IPv6 only by 31 December 2030.
+- **No outbound IPv6 on this computer.** The script says so at the top and marks
+  the score PROVISIONAL. It reports the connection checks (HTTP, HTTPS,
+  IPv6-only, TLS, HTTP/3, name server reachable and answering, SMTP, STARTTLS)
+  as NOT MEASURED, and still runs the DNS-only checks. Tell the user to run it
+  again from a network with IPv6 before trusting the score. Many home and mobile
+  connections have IPv6; most cloud servers and some offices do not.
+- **Comparing with the official score.** Add `--official` only when the user asks
+  (see the consent rule in scenario A). The official result can be days old, and
+  it shows its check date, so a small gap can be age, not a fault. Say which
+  result is newer.
 
 ## Capable, activated and tested
 

@@ -78,6 +78,14 @@ DOH_ENDPOINTS = [
     ("https://cloudflare-dns.com/dns-query", {"Accept": "application/dns-json"}),
 ]
 
+# Last-resort IPv4 addresses for the two DoH resolvers, used only when the local
+# resolver cannot look up their names (some networks and servers block it). The
+# connection still checks the certificate against the resolver's name.
+DOH_FALLBACK_ADDRESSES = {
+    "dns.google": ["8.8.8.8", "8.8.4.4"],
+    "cloudflare-dns.com": ["1.1.1.1", "1.0.0.1"],
+}
+
 OFFICIAL_API = "https://ipv6.my6.my/api/v1/domains/{domain}"
 
 REDIRECT_CODES = (301, 302, 303, 307, 308)
@@ -354,7 +362,14 @@ def install_ipv4_preference():
         return
 
     def filtered(host, port, family=0, type=0, proto=0, flags=0):
-        results = _ORIG_GETADDRINFO(host, port, family, type, proto, flags)
+        try:
+            results = _ORIG_GETADDRINFO(host, port, family, type, proto, flags)
+        except socket.gaierror:
+            pinned = DOH_FALLBACK_ADDRESSES.get(str(host).lower())
+            if not pinned:
+                raise
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port))
+                    for ip in pinned]
         v4 = [r for r in results if r[0] == socket.AF_INET]
         return v4 if v4 else results
 
@@ -378,7 +393,11 @@ class Resolver:
     def query(self, name, rtype, do=False):
         """Return the parsed DoH JSON dict, or None if both endpoints fail.
 
-        do=True sets the DNSSEC OK flag so signatures (RRSIG) are returned.
+        do=True asks for a validated answer with signatures (RRSIG); it is used
+        only for the DNSSEC check. Every other lookup sets cd=1 (checking
+        disabled), because the monitor's own record lookups do not validate: a
+        domain with a broken DNSSEC chain must still show its name servers, mail
+        servers and addresses, and lose its point only on the DNSSEC check.
         """
         key = (name.lower(), rtype, do)
         with self._lock:
@@ -393,6 +412,8 @@ class Resolver:
         params = {"name": name, "type": str(rtype)}
         if do:
             params["do"] = "1"
+        else:
+            params["cd"] = "1"
         qs = urllib.parse.urlencode(params)
         for base, extra_headers in DOH_ENDPOINTS:
             if self.budget.expired():
@@ -705,9 +726,12 @@ def ipv6_only_probe(domain, ip, budget=None):
 def http_with_redirects(domain, aaaa, port, resolver, budget, verify_tls=False):
     """HEAD the domain over IPv6, following up to three redirects over IPv6 only.
 
-    Each redirect Location is re-resolved to an AAAA address through DoH. If a
-    hop has no IPv6 address the result is a failure, matching the monitor's
-    IPv6-only curl behaviour. The final status code is returned.
+    Each redirect Location is re-resolved to an AAAA address through DoH. The
+    code returned is the last HTTP status actually received, as with the
+    monitor's curl: if a later hop cannot be followed (for example the redirect
+    goes to a name with no IPv6 address), the check still passes, because the
+    server did answer over IPv6. Only a connection that never gets any HTTP
+    answer is a failure.
     """
     result = {"code": 0, "latency_ms": None, "headers": {},
               "tls_valid": None, "cert_expires": None, "cert_issuer": None,
@@ -734,7 +758,6 @@ def http_with_redirects(domain, aaaa, port, resolver, budget, verify_tls=False):
             return result
         if hop >= MAX_REDIRECTS:
             result["error"] = "too many redirects"
-            result["code"] = 0
             return result
         location = res["headers"].get("location")
         if not location:
@@ -743,7 +766,6 @@ def http_with_redirects(domain, aaaa, port, resolver, budget, verify_tls=False):
         parsed = urllib.parse.urlsplit(urllib.parse.urljoin(base, location))
         if parsed.scheme not in ("http", "https"):
             result["error"] = "redirect to an unsupported scheme"
-            result["code"] = 0
             return result
         new_host = parsed.hostname
         new_port = parsed.port or (443 if parsed.scheme == "https" else 80)
@@ -757,7 +779,6 @@ def http_with_redirects(domain, aaaa, port, resolver, budget, verify_tls=False):
             ips = answers_of(resolver.query(new_host, RT_AAAA), RT_AAAA)
             if not ips:
                 result["error"] = "redirect target has no IPv6 address"
-                result["code"] = 0
                 return result
             ip = first_routable(ips)
             host = new_host

@@ -145,6 +145,26 @@ The score is 95, which is the level "Fully ready".
 | 60 to 89 | Partly ready |
 | 0 to 59 | Not ready |
 
+## Matching the monitor
+
+This script cleanly implements the published My6 IPv6 Readiness Criteria 1.0
+(https://ipv6.my6.my/readiness-criteria and https://ipv6.my6.my/methodology).
+Known, deliberate differences:
+
+- **(a) Time budget.** 60 seconds here; the website's own check allows 30 seconds
+  because it runs inside a web request.
+- **(b) DNS.** Read through public DNS-over-HTTPS resolvers; DNSSEC passes only on
+  Status 0 and the AD flag.
+- **(c) Vantage point.** The site measures from its own server, so a result can
+  differ if a site treats networks differently.
+- **(d) Render path.** The site also reports, outside the score, how many hosts the
+  home page loads over IPv6 ("render-path dependencies"); this script does not
+  measure that.
+
+Look-ups for name servers, mail servers and addresses do not validate DNSSEC, so a
+broken DNSSEC chain costs the DNSSEC point only. For HTTP and HTTPS, the last status
+received counts even if a later redirect cannot be followed over IPv6.
+
 ## Not measured is not failed
 
 A check that cannot be run from this computer is reported as NOT MEASURED, never as

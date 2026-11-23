@@ -353,5 +353,109 @@ class TestNormalizeDomain(unittest.TestCase):
         self.assertFalse(ipv6check.valid_domain("münchen.de"))
 
 
+class _FakeResponse:
+    """Context-manager stub for a DoH response, so no network is used."""
+
+    def __init__(self, body):
+        self._body = body
+
+    def read(self):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class _FakeOpener:
+    """Record the URL of each open() call and return a canned DoH answer."""
+
+    def __init__(self, body=b'{"Status": 0, "Answer": []}'):
+        self.urls = []
+        self._body = body
+
+    def open(self, req, timeout=None):
+        self.urls.append(req.full_url)
+        return _FakeResponse(self._body)
+
+
+class _StubResolver:
+    """Resolver stub that answers every query with the given response dict."""
+
+    def __init__(self, response):
+        self._response = response
+        self.queries = []
+
+    def query(self, name, rtype, do=False):
+        self.queries.append((name, rtype, do))
+        return self._response
+
+
+class TestResolverAndRedirects(unittest.TestCase):
+    def test_normal_lookup_disables_dnssec_validation(self):
+        resolver = ipv6check.Resolver(budget=ipv6check.Budget(limit=10, start=time.monotonic()))
+        opener = _FakeOpener()
+        resolver._opener = opener
+        resolver.query("example.test", ipv6check.RT_AAAA)
+        self.assertEqual(len(opener.urls), 1)
+        self.assertIn("cd=1", opener.urls[0])
+        self.assertNotIn("do=1", opener.urls[0])
+
+    def test_dnssec_lookup_sets_do_and_not_cd(self):
+        resolver = ipv6check.Resolver(budget=ipv6check.Budget(limit=10, start=time.monotonic()))
+        opener = _FakeOpener()
+        resolver._opener = opener
+        resolver.query("example.test", ipv6check.RT_SOA, do=True)
+        self.assertEqual(len(opener.urls), 1)
+        self.assertIn("do=1", opener.urls[0])
+        self.assertNotIn("cd=", opener.urls[0])
+
+    def test_redirect_without_aaaa_keeps_last_status(self):
+        budget = ipv6check.Budget(limit=10, start=time.monotonic())
+        stub = _StubResolver({"Status": 0, "Answer": []})
+
+        def fake_head(domain, ip, port, family, verify_tls, budget=None, path="/",
+                      method="HEAD"):
+            return {"code": 301, "latency_ms": 1,
+                    "headers": {"location": "https://example.test/"},
+                    "tls_valid": None, "cert_expires": None,
+                    "cert_issuer": None, "error": None}
+
+        original = ipv6check.http_head
+        ipv6check.http_head = fake_head
+        try:
+            result = ipv6check.http_with_redirects(
+                "example.test", ["2001:db8::1"], 80, stub, budget)
+        finally:
+            ipv6check.http_head = original
+
+        self.assertEqual(result["code"], 301)
+        self.assertIsNotNone(result["error"])
+        self.assertIn("no IPv6 address", result["error"])
+        # The status received was kept, so the check is still a pass.
+        self.assertTrue(ipv6check.http_pass_code(result["code"]))
+
+
+class TestDohFallbackAddresses(unittest.TestCase):
+    def test_pinned_address_used_only_when_the_name_cannot_be_looked_up(self):
+        import socket
+        ipv6check.install_ipv4_preference()
+
+        def failing(*args, **kwargs):
+            raise socket.gaierror("blocked")
+
+        original = ipv6check._ORIG_GETADDRINFO
+        ipv6check._ORIG_GETADDRINFO = failing
+        try:
+            pinned = socket.getaddrinfo("dns.google", 443)
+            self.assertEqual(pinned[0][4], ("8.8.8.8", 443))
+            with self.assertRaises(socket.gaierror):
+                socket.getaddrinfo("example.invalid", 443)
+        finally:
+            ipv6check._ORIG_GETADDRINFO = original
+
+
 if __name__ == "__main__":
     unittest.main()

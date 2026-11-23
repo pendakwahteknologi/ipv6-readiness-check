@@ -19,6 +19,26 @@ CLI or any chat assistant with a terminal at this repository and ask, in one
 sentence, to check a domain or to audit the server. The agent reads `AGENTS.md` and
 follows it. It also works by hand.
 
+## Let your AI assistant check your website
+
+Copy this prompt into your AI assistant, replace the part in square brackets with
+your website address, and send it:
+
+```text
+Use the free repository https://github.com/pendakwahteknologi/ipv6-readiness-check to check whether my website is ready for IPv6. Clone it, read AGENTS.md and follow it, then run the check on [your website address]. Tell me the score, the level and what to fix, in short plain words. Change nothing on my website.
+```
+
+Works in AI apps that can run commands on your computer, such as Claude Code, Codex or Gemini CLI. A chat window in a browser can explain the steps but cannot test your website.
+
+- **An assistant that can run commands** (for example Claude Code, Codex CLI or
+  Gemini CLI, or a chat assistant with a code or agent mode): it fetches this
+  repository, runs the check on your address, then explains the result and the fixes.
+  If its computer has no IPv6, it says so and marks the score provisional.
+- **A plain chat assistant that cannot run commands:** it cannot measure your site.
+  It can explain the criteria and walk you through running the one command
+  yourself, `python3 scripts/ipv6check.py your-site.example`, then explain the
+  output you paste back.
+
 ## What it does
 
 - **Scenario A: check a domain.** Runs 22 scored checks across the website, DNS and
